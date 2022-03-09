@@ -23,16 +23,17 @@ namespace Joelwmale\Auspost;
 class Shipment
 {
     private $_auspost;
+
+    private $from;
+    private $to;
+    private $parcels = [];
     
+    public $movementType;
     public $shipment_reference;
     public $customer_reference_1 = '';
     public $customer_reference_2 = '';
     public $email_tracking_enabled = true;
-    public $from;
-    public $to;
-    public $parcels = [];
     public $delivery_instructions = '';
-    public $movementType;
 
     public $product_id;
     public $shipment_id;
@@ -45,22 +46,28 @@ class Shipment
 
     /**
      * Add the To address
+     *
      * @param Address $data The address to deliver to
+     *
      * @return $this
      */
-    public function setTo($data)
+    public function setTo($data): self
     {
         $this->to = $data;
+
         return $this;
     }
     /**
      * Add the From address
+     *
      * @param Address $data The address to send from
+     *
      * @return $this
      */
-    public function setFrom($data)
+    public function setFrom($data): self
     {
         $this->from = $data;
+
         return $this;
     }
 
@@ -69,17 +76,26 @@ class Shipment
      *
      * @param string $movementType
      *
-     * @return void
+     * @return $this
      */
-    public function setMovementType($movementType)
+    public function setMovementType($movementType): self
     {
         $this->movementType = $movementType;
+
         return $this;
     }
 
-    public function addParcel($data)
+    /**
+     * Add a new parcel to the shipment
+     *
+     * @param Parcel $data
+     *
+     * @return $this
+     */
+    public function addParcel(Parcel $data): self
     {
         $this->parcels[] = $data;
+
         return $this;
     }
 
