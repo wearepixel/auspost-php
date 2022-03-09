@@ -25,9 +25,9 @@ class Shipment
 {
     private $_auspost;
 
-    private $from;
-    private $to;
-    private $parcels = [];
+    public $from;
+    public $to;
+    public $parcels = [];
     
     public $movement_type;
     public $shipment_reference;
