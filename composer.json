@@ -1,0 +1,24 @@
+{
+    "name": "joelwmale/auspost",
+    "type": "library",
+    "description": "A package to easily communicate with the AusPost API",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Josh Marshall",
+            "email": "josh@jmarshall.com.au"
+        },
+        {
+            "name": "Joel Male",
+            "email": "joel@joelmale.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Joelwmale\\Auspost\\": "src/"
+        }
+    }
+}
