@@ -9,6 +9,7 @@ namespace Joelwmale\Auspost;
  * @author Josh Marshall <josh@jmarshall.com.au>
  *
  * @property Auspost $_auspost
+ * @property string $movement_type
  * @property string $shipment_reference
  * @property string $customer_reference_1
  * @property string $customer_reference_2
@@ -28,7 +29,7 @@ class Shipment
     private $to;
     private $parcels = [];
     
-    public $movementType;
+    public $movement_type;
     public $shipment_reference;
     public $customer_reference_1 = '';
     public $customer_reference_2 = '';
@@ -47,26 +48,26 @@ class Shipment
     /**
      * Add the To address
      *
-     * @param Address $data The address to deliver to
+     * @param Address $address The address to deliver to
      *
      * @return $this
      */
-    public function setTo($data): self
+    public function setTo(Address $address): self
     {
-        $this->to = $data;
+        $this->to = $address;
 
         return $this;
     }
     /**
      * Add the From address
      *
-     * @param Address $data The address to send from
+     * @param Address $address The address to send from
      *
      * @return $this
      */
-    public function setFrom($data): self
+    public function setFrom(Address $address): self
     {
-        $this->from = $data;
+        $this->from = $address;
 
         return $this;
     }
@@ -78,9 +79,9 @@ class Shipment
      *
      * @return $this
      */
-    public function setMovementType($movementType): self
+    public function setMovementType($movement_type): self
     {
-        $this->movementType = $movementType;
+        $this->movement_type = $movement_type;
 
         return $this;
     }
@@ -139,22 +140,20 @@ class Shipment
         return $this->_auspost->getQuotes($request);
     }
 
-    public function lodgeShipment()
+    /**
+     * Lodge a shipment with Auspost
+     *
+     * @return $this
+     */
+    public function lodgeShipment(): self
     {
-        // Determine if Domestic or International
-        $domestic_shipping = $this->to->country == 'AU';
-
-        if ($domestic_shipping) {
-            // Lodge domestic shipment
-        } else {
-            // Lodge international shipment
-        }
         $request = [
             'shipment_reference' => $this->shipment_reference,
             'customer_reference_1' => $this->customer_reference_1,
             'customer_reference_2' => $this->customer_reference_2,
             'email_tracking_enabled' => $this->email_tracking_enabled,
-            'movement_type' => $this->movementType,
+            'movement_type' => $this->movement_type,
+
             'from' => [
                 'name'          => $this->from->name,
                 'business_name' => $this->from->business_name,
@@ -166,6 +165,7 @@ class Shipment
                 'phone'         => $this->from->phone,
                 'email'         => $this->from->email,
             ],
+
             'to' => [
                 'name'          => $this->to->name,
                 'business_name' => $this->to->business_name,
@@ -178,8 +178,10 @@ class Shipment
                 'email'         => $this->to->email,
                 'delivery_instructions' => $this->delivery_instructions,
             ],
+
             'items' => [],
         ];
+
         if (is_array($this->parcels) && count($this->parcels)) {
             foreach ($this->parcels as $parcel) {
                 $item = [
@@ -223,24 +225,32 @@ class Shipment
                 }
             }
         }
+
+        return $this;
     }
 
     /**
      * Get the labels for this shipment
+     *
      * @param LabelType $labelType
+     *
      * @return string url to label
+     *
      * @throws \Exception
      */
-    public function getLabel($labelType)
+    public function getLabel(LabelType $labelType): string
     {
         return $this->_auspost->getLabels([$this->shipment_id], $labelType);
     }
 
     /**
      * Delete this shipment
+     *
+     * @return bool
+     *
      * @throws \Exception
      */
-    public function deleteShipment()
+    public function deleteShipment(): bool
     {
         return $this->_auspost->deleteShipment($this->shipment_id);
     }
