@@ -234,7 +234,7 @@ class Auspost
             }
         }
         foreach ($data['labels'] as $label) {
-            return $label['url'];
+            return isset($label['url']) ? $label['url'] : '';
         }
 
         return '';
