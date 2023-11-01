@@ -22,7 +22,7 @@ Get a business account at Australia Post and request API access
 
 ```
 <?php
-	$auspost = new \Joelwmale\Auspost\Auspost('Your API Key', 'Your API Password', 'Your Account Number', $testmode);
+	$auspost = new \Joelwmale\Auspost\Auspost('Product Type', 'Your API Key', 'Your API Password', 'Your Account Number', $testmode);
 
 	// Get your account details
 	$account = $auspost->getAccountDetails();
@@ -98,6 +98,7 @@ Get a business account at Australia Post and request API access
 		'i9MK0Eav1ywAAAF0t8kdXI84',
 		$shipment->shipment_id,
 	];
+	
 	$label_pdf = $auspost->getLabels($shipment_ids, new \Joelwmale\Auspost\LabelType([
 		'layout_type' => \Joelwmale\Auspost\LabelType::LAYOUT_A4_FOUR_PER_PAGE,
 		'branded' => false,
