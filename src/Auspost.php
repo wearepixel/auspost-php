@@ -8,31 +8,55 @@ use Exception;
  * Interact with the Australian Post API
  *
  * @package Joelwmale
- * @author Josh Marshall <josh@jmarshall.com.au>
  */
 class Auspost
 {
-    private $api_key        = null;
-    private $api_password   = null;
+    private $productType = null;
+    private $api_key = null;
+    private $api_password = null;
     private $account_number = null;
-    private $test_mode      = null;
+    private $test_mode = null;
 
-    const API_SCHEME = 'tls://';
-    const API_HOST   = 'digitalapi.auspost.com.au';
-    const API_PORT   = 443;
-    const HEADER_EOL = "\r\n";
+    public const API_SCHEME = 'tls://';
+    public const API_HOST   = 'digitalapi.auspost.com.au';
+    public const API_PORT   = 443;
+    public const HEADER_EOL = "\r\n";
+
+    public const PARCEL_POST = 'Parcel Post';
+    public const EXPRESS_POST = 'Express Post';
+    public const INTERNATIONAL = 'International';
+    public const GLOBAL_LOGISITICS = 'Global Logistics';
+    public const STAR_TRACK = 'StarTrack';
+    public const STAR_TRACK_COURIER = 'StarTrack Courier';
+    public const ON_DEMAND = 'On Demand';
+
+    public const PRODUCT_TYPES = [
+        self::PARCEL_POST,
+        self::EXPRESS_POST,
+        self::INTERNATIONAL,
+        self::GLOBAL_LOGISITICS,
+        self::STAR_TRACK,
+        self::STAR_TRACK_COURIER,
+        self::ON_DEMAND,
+    ];
 
     private $socket; // socket for communicating to the API
 
     /**
      *
+     * @param string $productType The product type to use
      * @param string $api_key The AusPost API Key
      * @param string $api_password The AusPost API Password
      * @param string $account_number The AusPost Account number
      * @param bool $test_mode Whether to use test mode or not
      */
-    public function __construct($api_key, $api_password, $account_number, $test_mode = false)
+    public function __construct($productType, $api_key, $api_password, $account_number, $test_mode = false)
     {
+        if (!in_array($productType, self::PRODUCT_TYPES)) {
+            throw new Exception('Invalid product type');
+        }
+
+        $this->productType = $productType;
         $this->api_key = $api_key;
         $this->api_password = $api_password;
         $this->account_number = str_pad($account_number, 10, '0', STR_PAD_LEFT); // Ensure the account number is zero padded 10 digits
@@ -180,19 +204,23 @@ class Auspost
 
     /**
      * Get all labels for the shipments referenced by id
-     * @param string[] $shipment_ids
-     * @param LabelType $label_type
-     * @return string url to label file
      */
-    public function getLabels($shipment_ids, $label_type)
+    public function getLabels(array $shipmentIds, LabelType $labelType): string
     {
+        if (!in_array($labelType->layout_type, LabelType::AVAILABLE_LABELS[$this->productType])) {
+            $availableOptions = implode(', ', LabelType::AVAILABLE_LABELS[$this->productType]);
+            throw new Exception('Invalid label type for ' . $this->productType . '. Available options are: ' . $availableOptions);
+        }
+
         $group_template = [
-            'layout' => $label_type->layout_type,
-            'branded' => $label_type->branded,
-            'left_offset' => $label_type->left_offset,
-            'top_offset' => $label_type->top_offset,
+            'layout' => $labelType->layout_type,
+            'branded' => $labelType->branded,
+            'left_offset' => $labelType->left_offset,
+            'top_offset' => $labelType->top_offset,
         ];
+
         $groups = [];
+
         foreach ([
             'Parcel Post',
             'Express Post',
@@ -208,7 +236,8 @@ class Auspost
         }
 
         $shipments = [];
-        foreach ($shipment_ids as $shipment_id) {
+
+        foreach ($shipmentIds as $shipment_id) {
             $shipments[] = [
                 'shipment_id' => $shipment_id,
             ];
@@ -216,16 +245,19 @@ class Auspost
 
         $request = [
             'wait_for_label_url' => true,
+
             'preferences' => [
                 'type' => 'PRINT',
-                'format' => $label_type->format,
+                'format' => $labelType->format,
                 'groups' => $groups,
             ],
             'shipments' => $shipments,
         ];
 
         $this->sendPostRequest('labels', $request);
+
         $data = $this->convertResponse($this->getResponse()->data);
+
         $this->closeSocket();
 
         if (array_key_exists('errors', $data)) {
@@ -282,7 +314,7 @@ class Auspost
             $data['order']['manifest_pdf'] = $this->getResponse()->data;
             $summarydata = $this->convertResponse($data['order']['manifest_pdf']);
             $this->closeSocket();
-    
+
             if (is_array($summarydata) && array_key_exists('errors', $summarydata)) {
                 foreach ($summarydata['errors'] as $error) {
                     throw new Exception($error['message']);
@@ -440,6 +472,7 @@ class Auspost
         $encoded_data = $data ? json_encode($data) : '';
 
         $this->createSocket();
+
         $headers = $this->buildHttpHeaders($type, $action, strlen($encoded_data), $include_account);
 
         if (fwrite(
@@ -483,7 +516,7 @@ class Auspost
             }
         }
 
-        $response = new \stdClass;
+        $response = new \stdClass();
         $response->headers = $headers;
         $response->data = $data;
 
